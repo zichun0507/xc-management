@@ -1,0 +1,35 @@
+
+server:
+  port: 9998
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  datasource:
+    url: jdbc:mysql://localhost:3306/xc_management?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: qwer1234
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+
+app:
+  upload:
+    base-path: ./uploads
+
+sa-token:
+  token-name: xc-token
+  timeout: 2592000
+  active-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  is-log: false
+# 日志输出级别
+logging:
+  level:
+    root: debug
