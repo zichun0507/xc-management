@@ -3,17 +3,20 @@ package com.xinchang.management.template.service;
 import com.xinchang.management.common.BusinessException;
 import com.xinchang.management.company.entity.Company;
 import com.xinchang.management.employee.entity.Employee;
-import java.time.format.DateTimeFormatter;
 import org.apache.poi.xwpf.usermodel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 文档渲染服务，负责将模板中的 #{字段名} 占位符替换为实际数据
+ */
 @Service
 public class DocRenderService {
 
@@ -21,6 +24,12 @@ public class DocRenderService {
     private static final long TIMEOUT_MS = 5 * 60 * 1000;
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("#\\{(\\w+)\\}");
 
+    /**
+     * 渲染模板文档，将占位符替换为实际字段值
+     * @param templatePath 模板文件路径
+     * @param fieldMap 字段名到值的映射
+     * @return 渲染后的文档字节数组
+     */
     public byte[] render(String templatePath, Map<String, String> fieldMap) {
         List<String> missingFields = new ArrayList<>();
         long startTime = System.currentTimeMillis();
@@ -28,6 +37,7 @@ public class DocRenderService {
         try (FileInputStream fis = new FileInputStream(templatePath);
              XWPFDocument doc = new XWPFDocument(fis)) {
 
+            // 依次替换文档正文、表格、页眉、页脚中的占位符
             replaceInBody(doc, fieldMap, missingFields, startTime);
             replaceInTables(doc, fieldMap, missingFields, startTime);
             replaceInHeaders(doc, fieldMap, missingFields, startTime);
@@ -47,7 +57,7 @@ public class DocRenderService {
     }
 
     private void replaceInBody(XWPFDocument doc, Map<String, String> fieldMap,
-                               List<String> missingFields, long startTime) {
+                                  List<String> missingFields, long startTime) {
         for (XWPFParagraph para : doc.getParagraphs()) {
             checkTimeout(startTime);
             replaceInParagraph(para, fieldMap, missingFields);
@@ -55,7 +65,7 @@ public class DocRenderService {
     }
 
     private void replaceInTables(XWPFDocument doc, Map<String, String> fieldMap,
-                                 List<String> missingFields, long startTime) {
+                                   List<String> missingFields, long startTime) {
         for (XWPFTable table : doc.getTables()) {
             for (XWPFTableRow row : table.getRows()) {
                 for (XWPFTableCell cell : row.getTableCells()) {
@@ -69,7 +79,7 @@ public class DocRenderService {
     }
 
     private void replaceInHeaders(XWPFDocument doc, Map<String, String> fieldMap,
-                                  List<String> missingFields, long startTime) {
+                                    List<String> missingFields, long startTime) {
         for (XWPFHeader header : doc.getHeaderList()) {
             for (XWPFParagraph para : header.getParagraphs()) {
                 checkTimeout(startTime);
@@ -88,7 +98,7 @@ public class DocRenderService {
     }
 
     private void replaceInFooters(XWPFDocument doc, Map<String, String> fieldMap,
-                                  List<String> missingFields, long startTime) {
+                                    List<String> missingFields, long startTime) {
         for (XWPFFooter footer : doc.getFooterList()) {
             for (XWPFParagraph para : footer.getParagraphs()) {
                 checkTimeout(startTime);
@@ -107,7 +117,7 @@ public class DocRenderService {
     }
 
     private void replaceInParagraph(XWPFParagraph para, Map<String, String> fieldMap,
-                                    List<String> missingFields) {
+                                       List<String> missingFields) {
         if (!hasPlaceholder(para.getText())) return;
 
         List<XWPFRun> runs = para.getRuns();
@@ -120,7 +130,7 @@ public class DocRenderService {
     }
 
     private boolean trySimpleRunReplacement(List<XWPFRun> runs, Map<String, String> fieldMap,
-                                            List<String> missingFields) {
+                                                List<String> missingFields) {
         boolean anyChanged = false;
         for (XWPFRun run : runs) {
             String text = run.getText(0);
@@ -143,7 +153,7 @@ public class DocRenderService {
     }
 
     private void tryMergedReplacement(List<XWPFRun> runs, Map<String, String> fieldMap,
-                                      List<String> missingFields) {
+                                         List<String> missingFields) {
         StringBuilder merged = new StringBuilder();
         for (XWPFRun run : runs) {
             String t = run.getText(0);
@@ -180,6 +190,11 @@ public class DocRenderService {
 
     // ==================== Field Map Builders ====================
 
+    /**
+     * 构建企业字段映射Map，用于模板渲染替换
+     * @param company 企业实体
+     * @return 字段名到字段值的映射
+     */
     public Map<String, String> buildCompanyFieldMap(Company company) {
         Map<String, String> map = new HashMap<>();
         map.put("companyName", company.getCompanyName());
@@ -197,6 +212,11 @@ public class DocRenderService {
         return map;
     }
 
+    /**
+     * 构建人员字段映射Map，用于模板渲染替换
+     * @param employee 人员实体
+     * @return 字段名到字段值的映射
+     */
     public Map<String, String> buildEmployeeFieldMap(Employee employee) {
         Map<String, String> map = new HashMap<>();
         map.put("name", safe(employee.getName()));

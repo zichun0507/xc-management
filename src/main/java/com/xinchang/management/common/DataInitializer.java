@@ -8,6 +8,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
+/**
+ * 系统数据初始化器，在应用启动时自动执行，用于创建默认管理员账号
+ */
 @Component
 public class DataInitializer implements CommandLineRunner {
 
@@ -19,6 +22,10 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    /**
+     * 应用启动时执行的初始化逻辑，检查并创建默认管理员账号
+     * @param args 启动参数
+     */
     @Override
     public void run(String... args) {
         Long count = jdbcTemplate.queryForObject(

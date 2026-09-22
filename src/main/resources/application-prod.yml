@@ -1,0 +1,49 @@
+# ==================== 生产环境配置 ====================
+server:
+  port: 9998
+
+spring:
+  datasource:
+    # 生产数据库连接（请替换为实际生产数据库地址）
+    url: jdbc:mysql://localhost:3306/xc_management_prod?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=true&verifyServerCertificate=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: ${DB_PASSWORD:change-me}
+    # 生产环境使用HikariCP连接池，优化连接管理
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 30
+      idle-timeout: 600000
+      connection-timeout: 10000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+      auto-commit: true
+      leak-detection-threshold: 60000
+
+# 日志级别：生产环境设为INFO/WARN，减少日志输出
+logging:
+  level:
+    root: WARN
+    com.xinchang.management: INFO
+    org.springframework.jdbc.core: WARN
+    org.springframework.web: WARN
+
+# Knife4j 接口文档：生产环境关闭
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# Knife4j 配置
+knife4j:
+  enable: false
+
+# 应用上传路径（生产环境建议使用绝对路径）
+app:
+  upload:
+    base-path: /data/xc-management/uploads
+
+# sa-token 生产配置
+sa-token:
+  is-log: false

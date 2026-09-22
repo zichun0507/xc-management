@@ -3,58 +3,63 @@ package com.xinchang.management.company.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * 企业实体类，对应数据库 company 表
+ */
 @TableName("company")
+@Data
+@Schema(description = "企业实体", name = "Company")
 public class Company {
 
     @TableId(type = IdType.AUTO)
+    @Schema(description = "企业主键ID", example = "1")
     private Long id;
-    private String companyName;
-    private String shortName;
-    private String englishName;
-    private String unifiedCode;
-    private String legalPerson;
-    private String contactPerson;
-    private String contactPhone;
-    private String address;
-    private String businessStatus;
-    private LocalDate leaseStartDate;
-    private LocalDate leaseEndDate;
-    private String remark;
-    private LocalDateTime createdTime;
-    private LocalDateTime updatedTime;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getCompanyName() { return companyName; }
-    public void setCompanyName(String companyName) { this.companyName = companyName; }
-    public String getShortName() { return shortName; }
-    public void setShortName(String shortName) { this.shortName = shortName; }
-    public String getEnglishName() { return englishName; }
-    public void setEnglishName(String englishName) { this.englishName = englishName; }
-    public String getUnifiedCode() { return unifiedCode; }
-    public void setUnifiedCode(String unifiedCode) { this.unifiedCode = unifiedCode; }
-    public String getLegalPerson() { return legalPerson; }
-    public void setLegalPerson(String legalPerson) { this.legalPerson = legalPerson; }
-    public String getContactPerson() { return contactPerson; }
-    public void setContactPerson(String contactPerson) { this.contactPerson = contactPerson; }
-    public String getContactPhone() { return contactPhone; }
-    public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-    public String getBusinessStatus() { return businessStatus; }
-    public void setBusinessStatus(String businessStatus) { this.businessStatus = businessStatus; }
-    public LocalDate getLeaseStartDate() { return leaseStartDate; }
-    public void setLeaseStartDate(LocalDate leaseStartDate) { this.leaseStartDate = leaseStartDate; }
-    public LocalDate getLeaseEndDate() { return leaseEndDate; }
-    public void setLeaseEndDate(LocalDate leaseEndDate) { this.leaseEndDate = leaseEndDate; }
-    public String getRemark() { return remark; }
-    public void setRemark(String remark) { this.remark = remark; }
-    public LocalDateTime getCreatedTime() { return createdTime; }
-    public void setCreatedTime(LocalDateTime createdTime) { this.createdTime = createdTime; }
-    public LocalDateTime getUpdatedTime() { return updatedTime; }
-    public void setUpdatedTime(LocalDateTime updatedTime) { this.updatedTime = updatedTime; }
+    @Schema(description = "企业全称", example = "新长科技有限公司")
+    private String companyName;
+
+    @Schema(description = "企业简称", example = "新长科技")
+    private String shortName;
+
+    @Schema(description = "企业英文名称", example = "XinChang Technology Co., Ltd.")
+    private String englishName;
+
+    @Schema(description = "统一社会信用代码", example = "91330100MA2KXXXXXX")
+    private String unifiedCode;
+
+    @Schema(description = "法定代表人", example = "张三")
+    private String legalPerson;
+
+    @Schema(description = "联系人", example = "李四")
+    private String contactPerson;
+
+    @Schema(description = "联系电话", example = "13800001111")
+    private String contactPhone;
+
+    @Schema(description = "经营地址", example = "浙江省杭州市余杭区XXX路1号")
+    private String address;
+
+    @Schema(description = "业务状态（NORMAL-正常运营/MOVED_OUT-迁出/SUSPENDED-停办）", example = "NORMAL")
+    private String businessStatus;
+
+    @Schema(description = "租约开始日期", example = "2024-01-01")
+    private LocalDate leaseStartDate;
+
+    @Schema(description = "租约到期日期", example = "2025-12-31")
+    private LocalDate leaseEndDate;
+
+    @Schema(description = "备注")
+    private String remark;
+
+    @Schema(description = "创建时间")
+    private LocalDateTime createdTime;
+
+    @Schema(description = "更新时间")
+    private LocalDateTime updatedTime;
 }

@@ -3,51 +3,56 @@ package com.xinchang.management.employee.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * 企业人员实体类，对应数据库 employee 表
+ */
 @TableName("employee")
+@Data
+@Schema(description = "企业人员实体", name = "Employee")
 public class Employee {
 
     @TableId(type = IdType.AUTO)
+    @Schema(description = "人员主键ID", example = "1")
     private Long id;
-    private Long companyId;
-    private String name;
-    private String gender;
-    private String idCard;
-    private String school;
-    private String major;
-    private String phone;
-    private String photo;
-    private String position;
-    private String status;
-    private LocalDateTime createdTime;
-    private LocalDateTime updatedTime;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getCompanyId() { return companyId; }
-    public void setCompanyId(Long companyId) { this.companyId = companyId; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getGender() { return gender; }
-    public void setGender(String gender) { this.gender = gender; }
-    public String getIdCard() { return idCard; }
-    public void setIdCard(String idCard) { this.idCard = idCard; }
-    public String getSchool() { return school; }
-    public void setSchool(String school) { this.school = school; }
-    public String getMajor() { return major; }
-    public void setMajor(String major) { this.major = major; }
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-    public String getPhoto() { return photo; }
-    public void setPhoto(String photo) { this.photo = photo; }
-    public String getPosition() { return position; }
-    public void setPosition(String position) { this.position = position; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public LocalDateTime getCreatedTime() { return createdTime; }
-    public void setCreatedTime(LocalDateTime createdTime) { this.createdTime = createdTime; }
-    public LocalDateTime getUpdatedTime() { return updatedTime; }
-    public void setUpdatedTime(LocalDateTime updatedTime) { this.updatedTime = updatedTime; }
+    @Schema(description = "所属企业ID", example = "1")
+    private Long companyId;
+
+    @Schema(description = "姓名", example = "张三")
+    private String name;
+
+    @Schema(description = "性别", example = "男")
+    private String gender;
+
+    @Schema(description = "身份证号", example = "33010119900101XXXX")
+    private String idCard;
+
+    @Schema(description = "毕业学校")
+    private String school;
+
+    @Schema(description = "专业")
+    private String major;
+
+    @Schema(description = "联系电话", example = "13800001111")
+    private String phone;
+
+    @Schema(description = "照片存储路径")
+    private String photo;
+
+    @Schema(description = "职位")
+    private String position;
+
+    @Schema(description = "人员状态（ACTIVE-在职/INACTIVE-停办）", example = "ACTIVE")
+    private String status;
+
+    @Schema(description = "创建时间")
+    private LocalDateTime createdTime;
+
+    @Schema(description = "更新时间")
+    private LocalDateTime updatedTime;
 }

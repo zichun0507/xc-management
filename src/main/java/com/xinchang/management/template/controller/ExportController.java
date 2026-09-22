@@ -13,6 +13,8 @@ import com.xinchang.management.employee.mapper.EmployeeMapper;
 import com.xinchang.management.template.entity.DocTemplate;
 import com.xinchang.management.template.mapper.DocTemplateMapper;
 import com.xinchang.management.template.service.DocRenderService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,8 +28,12 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * 资料导出控制器，提供企业代办资料批量导出和任命书导出接口
+ */
 @RestController
 @RequestMapping("/api/export")
+@Tag(name = "资料导出", description = "企业代办资料打包导出及任命书导出接口")
 public class ExportController {
 
     @Autowired
@@ -43,7 +49,13 @@ public class ExportController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    /**
+     * 导出企业所有代办资料为Zip压缩包（根据模板类型批量生成文档）
+     * @param body 包含企业ID的请求体
+     * @return Zip压缩包字节数组
+     */
     @PostMapping("/company")
+    @Operation(summary = "导出企业代办资料", description = "根据企业ID和所有DOCUMENT类型模板，批量生成代办文档并打包为Zip下载")
     public ResponseEntity<byte[]> exportCompanyDocs(@RequestBody Map<String, Long> body) {
         Long companyId = body.get("companyId");
         if (companyId == null) throw new BusinessException("企业ID不能为空");
@@ -73,10 +85,15 @@ public class ExportController {
                 .body(zipData);
     }
 
+    /**
+     * 导出指定人员的任命书为Zip压缩包
+     * @param body 包含企业ID、人员ID列表及模板ID的请求体
+     * @return Zip压缩包字节数组
+     */
     @PostMapping("/appointment")
+    @Operation(summary = "导出任命书", description = "根据企业ID和人员ID列表，批量生成任命书文档并打包为Zip下载")
     public ResponseEntity<byte[]> exportAppointment(@RequestBody Map<String, Object> body) {
         Long companyId = body.get("companyId") != null ? Long.valueOf(body.get("companyId").toString()) : null;
-        @SuppressWarnings("unchecked")
         List<Integer> empIdsRaw = (List<Integer>) body.get("employeeIds");
         Long templateId = body.get("templateId") != null ? Long.valueOf(body.get("templateId").toString()) : null;
 
@@ -115,7 +132,7 @@ public class ExportController {
     }
 
     private byte[] buildCompanyZip(Company company, List<DocTemplate> templates,
-                                   Map<String, String> companyFields, List<Employee> employees) {
+                                       Map<String, String> companyFields, List<Employee> employees) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ZipOutputStream zos = new ZipOutputStream(baos)) {
 
@@ -142,7 +159,7 @@ public class ExportController {
     }
 
     private byte[] buildAppointmentZip(Company company, DocTemplate template,
-                                       Map<String, String> companyFields, List<Employee> employees) {
+                                          Map<String, String> companyFields, List<Employee> employees) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ZipOutputStream zos = new ZipOutputStream(baos)) {
 

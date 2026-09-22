@@ -1,38 +1,43 @@
 package com.xinchang.management.auth.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.annotation.IdType;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * 系统用户实体类，对应数据库 sys_user 表
+ */
 @TableName("sys_user")
+@Data
+@Schema(description = "系统用户实体", name = "SysUser")
 public class SysUser {
 
     @TableId(type = IdType.AUTO)
+    @Schema(description = "用户主键ID", example = "1")
     private Long id;
-    private String username;
-    private String password;
-    private String realName;
-    private String role;
-    private String status;
-    private LocalDateTime createdTime;
-    private LocalDateTime updatedTime;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-    public String getRealName() { return realName; }
-    public void setRealName(String realName) { this.realName = realName; }
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public LocalDateTime getCreatedTime() { return createdTime; }
-    public void setCreatedTime(LocalDateTime createdTime) { this.createdTime = createdTime; }
-    public LocalDateTime getUpdatedTime() { return updatedTime; }
-    public void setUpdatedTime(LocalDateTime updatedTime) { this.updatedTime = updatedTime; }
+    @Schema(description = "用户名", example = "admin")
+    private String username;
+
+    @Schema(description = "加密后的密码")
+    private String password;
+
+    @Schema(description = "真实姓名", example = "管理员")
+    private String realName;
+
+    @Schema(description = "角色（ADMIN-管理员/USER-普通用户）", example = "ADMIN")
+    private String role;
+
+    @Schema(description = "用户状态（ENABLED-启用/DISABLED-禁用）", example = "ENABLED")
+    private String status;
+
+    @Schema(description = "创建时间")
+    private LocalDateTime createdTime;
+
+    @Schema(description = "更新时间")
+    private LocalDateTime updatedTime;
 }

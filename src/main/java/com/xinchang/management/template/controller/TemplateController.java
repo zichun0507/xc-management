@@ -9,6 +9,8 @@ import com.xinchang.management.common.BusinessException;
 import com.xinchang.management.common.Result;
 import com.xinchang.management.template.entity.DocTemplate;
 import com.xinchang.management.template.mapper.DocTemplateMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -24,8 +26,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * 文档模板管理控制器，提供模板的上传、删除和查询接口
+ */
 @RestController
 @RequestMapping("/api/templates")
+@Tag(name = "模板管理", description = "代办文档模板的上传、删除与查询接口")
 public class TemplateController {
 
     @Autowired
@@ -42,17 +48,30 @@ public class TemplateController {
     private static final Set<String> EXECUTABLE_FORMATS = Set.of("exe", "bat", "sh", "dll", "com", "scr", "pif", "vbs", "msi", "reg", "cmd", "ps1");
     private static final long MAX_TEMPLATE_SIZE = 50 * 1024 * 1024;
 
+    /**
+     * 查询所有文档模板列表
+     * @return 模板列表
+     */
     @GetMapping
+    @Operation(summary = "查询模板列表", description = "获取所有代办文档模板信息")
     public Result<List<DocTemplate>> list() {
         return Result.ok(docTemplateMapper.selectList(
                 new LambdaQueryWrapper<DocTemplate>().orderByDesc(DocTemplate::getUploadedTime)));
     }
 
+    /**
+     * 上传新的文档模板（仅支持docx格式）
+     * @param file 模板文件
+     * @param templateName 模板名称
+     * @param templateType 模板类型（DOCUMENT/APPOINTMENT）
+     * @return 操作结果
+     */
     @SaCheckRole("ADMIN")
     @PostMapping
+    @Operation(summary = "上传模板", description = "上传新的代办文档模板，仅支持.docx格式")
     public Result<Void> upload(@RequestParam("file") MultipartFile file,
-                               @RequestParam("templateName") String templateName,
-                               @RequestParam(value = "templateType", defaultValue = "DOCUMENT") String templateType) {
+                                  @RequestParam("templateName") String templateName,
+                                  @RequestParam(value = "templateType", defaultValue = "DOCUMENT") String templateType) {
         if (file.isEmpty()) throw new BusinessException("上传文件为空");
         if (!Set.of("DOCUMENT", "APPOINTMENT").contains(templateType)) {
             throw new BusinessException("无效的模板类型");
@@ -94,8 +113,14 @@ public class TemplateController {
         return Result.ok();
     }
 
+    /**
+     * 删除指定模板（同时删除服务器上的文件）
+     * @param id 模板ID
+     * @return 操作结果
+     */
     @SaCheckRole("ADMIN")
     @DeleteMapping("/{id}")
+    @Operation(summary = "删除模板", description = "删除指定ID的模板文件及数据库记录")
     public Result<Void> delete(@PathVariable Long id) {
         DocTemplate template = docTemplateMapper.selectById(id);
         if (template == null) throw new BusinessException("模板不存在");

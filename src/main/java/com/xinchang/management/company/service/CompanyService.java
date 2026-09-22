@@ -29,6 +29,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 企业业务逻辑服务层，提供企业信息的增删改查、状态变更、导入导出等功能
+ */
 @Service
 public class CompanyService {
 
@@ -47,13 +50,24 @@ public class CompanyService {
 
     // ==================== Query ====================
 
+    /**
+     * 分页查询企业列表，支持按企业名称、房间号、楼栋、楼层筛选
+     * @param companyName 企业名称（模糊匹配）
+     * @param roomNumber 房间号（模糊匹配）
+     * @param buildingId 楼栋ID（精确匹配）
+     * @param floorId 楼层ID（精确匹配）
+     * @param pageNum 页码
+     * @param pageSize 每页条数
+     * @return 分页查询结果
+     */
     public Page<Company> pageCompanies(String companyName, String roomNumber,
-                                       Long buildingId, Long floorId, int pageNum, int pageSize) {
+                                           Long buildingId, Long floorId, int pageNum, int pageSize) {
         Page<Company> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Company> wrapper = new LambdaQueryWrapper<Company>()
                 .like(StringUtils.isNotBlank(companyName), Company::getCompanyName, companyName)
                 .orderByDesc(Company::getCreatedTime);
 
+        // 通过房间筛选条件获取匹配的企业ID列表
         List<Long> filteredIds = getCompanyIdsByRoomFilter(roomNumber, buildingId, floorId);
         if (filteredIds != null) {
             if (filteredIds.isEmpty()) {
@@ -64,14 +78,21 @@ public class CompanyService {
         return companyMapper.selectPage(page, wrapper);
     }
 
+    /**
+     * 获取企业详情，包含企业基本信息及分配的房间列表
+     * @param id 企业ID
+     * @return 包含企业信息和房间列表的Map
+     */
     public Map<String, Object> getCompanyDetail(Long id) {
         Company company = companyMapper.selectById(id);
         if (company == null) throw new BusinessException("企业不存在");
 
+        // 查询该企业所有关联的房间分配记录
         List<CompanyRoom> assignments = companyRoomMapper.selectList(
                 new LambdaQueryWrapper<CompanyRoom>().eq(CompanyRoom::getCompanyId, id));
         List<Long> roomIds = assignments.stream().map(CompanyRoom::getRoomId).collect(Collectors.toList());
 
+        // 批量查询房间详情
         List<Map<String, Object>> rooms = new ArrayList<>();
         if (!roomIds.isEmpty()) {
             roomMapper.selectBatchIds(roomIds).forEach(r -> {
@@ -91,12 +112,20 @@ public class CompanyService {
         return result;
     }
 
+    /**
+     * 根据房间筛选条件获取匹配的企业ID列表
+     * @param roomNumber 房间号
+     * @param buildingId 楼栋ID
+     * @param floorId 楼层ID
+     * @return 匹配的企业ID列表，无筛选条件时返回null
+     */
     private List<Long> getCompanyIdsByRoomFilter(String roomNumber, Long buildingId, Long floorId) {
         if (StringUtils.isBlank(roomNumber) && buildingId == null && floorId == null) {
             return null;
         }
         LambdaQueryWrapper<CompanyRoom> crWrapper = new LambdaQueryWrapper<>();
         if (roomNumber != null || buildingId != null || floorId != null) {
+            // 先查询符合条件的房间，再通过房间ID关联企业
             List<Long> roomIdList = roomMapper.selectList(new LambdaQueryWrapper<Room>()
                             .like(StringUtils.isNotBlank(roomNumber), Room::getRoomNumber, roomNumber)
                             .eq(buildingId != null, Room::getBuildingId, buildingId)
@@ -113,6 +142,11 @@ public class CompanyService {
 
     // ==================== Create / Update ====================
 
+    /**
+     * 新增企业，校验企业名称非空后写入数据库并绑定房间
+     * @param company 企业实体
+     * @param roomIds 分配的房间ID列表
+     */
     @Transactional(rollbackFor = Exception.class)
     public void createCompany(Company company, List<Long> roomIds) {
         if (StringUtils.isBlank(company.getCompanyName())) {
@@ -121,20 +155,29 @@ public class CompanyService {
         company.setBusinessStatus("NORMAL");
         companyMapper.insert(company);
 
+        // 新增成功后绑定房间
         if (roomIds != null && !roomIds.isEmpty()) {
             bindRooms(company.getId(), roomIds);
         }
         writeLog("COMPANY", "CREATE", "新增企业：" + company.getCompanyName());
     }
 
+    /**
+     * 更新企业信息，仅NORMAL状态的企业可编辑
+     * @param id 企业ID
+     * @param input 更新后的企业信息
+     * @param roomIds 重新分配的房间ID列表
+     */
     @Transactional(rollbackFor = Exception.class)
     public void updateCompany(Long id, Company input, List<Long> roomIds) {
         Company company = companyMapper.selectById(id);
         if (company == null) throw new BusinessException("企业不存在");
+        // 迁出或停办状态的企业不允许编辑
         if (!"NORMAL".equals(company.getBusinessStatus())) {
             throw new BusinessException("当前企业状态不支持编辑，仅正常运营企业可修改");
         }
 
+        // 按字段逐一更新，非空才覆盖
         if (StringUtils.isNotBlank(input.getCompanyName())) company.setCompanyName(input.getCompanyName());
         if (StringUtils.isNotBlank(input.getUnifiedCode())) company.setUnifiedCode(input.getUnifiedCode());
         if (StringUtils.isNotBlank(input.getLegalPerson())) company.setLegalPerson(input.getLegalPerson());
@@ -144,6 +187,7 @@ public class CompanyService {
         if (input.getRemark() != null) company.setRemark(input.getRemark());
         companyMapper.updateById(company);
 
+        // 如有房间变更，先释放旧房间再绑定新房间
         if (roomIds != null) {
             List<Long> oldRoomIds = companyRoomMapper.selectList(
                             new LambdaQueryWrapper<CompanyRoom>().eq(CompanyRoom::getCompanyId, id))
@@ -157,6 +201,12 @@ public class CompanyService {
 
     // ==================== Status Change ====================
 
+    /**
+     * 变更企业业务状态，迁出时自动释放房间并冻结人员
+     * @param id 企业ID
+     * @param newStatus 新状态（NORMAL/MOVED_OUT/SUSPENDED）
+     * @param remark 备注信息
+     */
     @Transactional(rollbackFor = Exception.class)
     public void changeStatus(Long id, String newStatus, String remark) {
         if (!VALID_STATUSES.contains(newStatus)) {
@@ -170,13 +220,16 @@ public class CompanyService {
         company.setRemark(StringUtils.isNotBlank(remark) ? remark : company.getRemark());
         companyMapper.updateById(company);
 
+        // 迁出或停办时，释放房间并将企业下所有人员状态设为INACTIVE
         if ("MOVED_OUT".equals(newStatus) || "SUSPENDED".equals(newStatus)) {
             if ("MOVED_OUT".equals(newStatus)) {
+                // 迁出：释放所有已分配的房间
                 List<Long> roomIds = companyRoomMapper.selectList(
                                 new LambdaQueryWrapper<CompanyRoom>().eq(CompanyRoom::getCompanyId, id))
                         .stream().map(CompanyRoom::getRoomId).collect(Collectors.toList());
                 releaseRooms(roomIds);
             }
+            // 停办或迁出均需将人员设为INACTIVE
             jdbcTemplate.update("UPDATE employee SET status = 'INACTIVE' WHERE company_id = ? AND status = 'ACTIVE'", id);
         }
 
@@ -186,10 +239,16 @@ public class CompanyService {
 
     // ==================== Room Binding ====================
 
+    /**
+     * 将指定房间绑定到企业，校验房间存在且为空闲状态
+     * @param companyId 企业ID
+     * @param roomIds 房间ID列表
+     */
     private void bindRooms(Long companyId, List<Long> roomIds) {
         for (Long roomId : roomIds) {
             Room room = roomMapper.selectById(roomId);
             if (room == null) throw new BusinessException("房间ID " + roomId + " 不存在");
+            // 房间必须为空闲状态才可分配
             if (!"FREE".equals(room.getStatus())) {
                 throw new BusinessException("房间 " + room.getRoomNumber() + " 已被占用");
             }
@@ -199,11 +258,16 @@ public class CompanyService {
             cr.setAllocatedTime(LocalDateTime.now());
             companyRoomMapper.insert(cr);
 
+            // 更新房间状态为占用
             room.setStatus("OCCUPIED");
             roomMapper.updateById(room);
         }
     }
 
+    /**
+     * 释放指定房间，将状态重置为FREE
+     * @param roomIds 房间ID列表
+     */
     private void releaseRooms(List<Long> roomIds) {
         if (roomIds == null || roomIds.isEmpty()) return;
         for (Long roomId : roomIds) {
@@ -217,8 +281,16 @@ public class CompanyService {
 
     // ==================== Export ====================
 
+    /**
+     * 导出企业列表为Excel文件，包含企业基本信息及分配的房间号
+     * @param companyName 企业名称筛选
+     * @param roomNumber 房间号筛选
+     * @param buildingId 楼栋ID筛选
+     * @param floorId 楼层ID筛选
+     * @return Excel文件的字节数组
+     */
     public byte[] exportCompanies(String companyName, String roomNumber,
-                                  Long buildingId, Long floorId) throws IOException {
+                                    Long buildingId, Long floorId) throws IOException {
         List<Company> companies = getFilteredList(companyName, roomNumber, buildingId, floorId);
 
         try (SXSSFWorkbook wb = new SXSSFWorkbook()) {
@@ -246,6 +318,7 @@ public class CompanyService {
                 row.createCell(10).setCellValue(statusLabel(c.getBusinessStatus()));
                 row.createCell(11).setCellValue(c.getRemark());
 
+                // 查询并拼接该企业分配的所有房间号
                 List<Long> roomIds = companyRoomMapper.selectList(
                                 new LambdaQueryWrapper<CompanyRoom>().eq(CompanyRoom::getCompanyId, c.getId()))
                         .stream().map(CompanyRoom::getRoomId).collect(Collectors.toList());
@@ -269,6 +342,11 @@ public class CompanyService {
 
     // ==================== Import ====================
 
+    /**
+     * 通过Excel文件批量导入企业信息，逐行解析并写入数据库
+     * @param file Excel文件（.xlsx 或 .xls 格式）
+     * @return 导入结果，包含成功条数和错误列表
+     */
     public Map<String, Object> importCompanies(MultipartFile file) throws IOException {
         String filename = file.getOriginalFilename();
         if (filename == null || !(filename.endsWith(".xlsx") || filename.endsWith(".xls"))) {
@@ -285,6 +363,7 @@ public class CompanyService {
             int successCount = 0;
             List<Map<String, Object>> errors = new ArrayList<>();
 
+            // 从第二行开始逐行解析数据
             for (int i = 1; i <= totalRows; i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
@@ -314,6 +393,7 @@ public class CompanyService {
                     companyMapper.insert(company);
                     successCount++;
                 } catch (Exception e) {
+                    // 记录单行错误但继续导入其余行
                     Map<String, Object> err = new HashMap<>();
                     err.put("row", rowNum);
                     err.put("reason", e instanceof BusinessException ? e.getMessage() : "数据格式错误");
@@ -332,17 +412,14 @@ public class CompanyService {
 
     // ==================== Template ====================
 
+    /**
+     * 生成企业导入模板Excel文件
+     * @return 模板Excel文件的字节数组
+     */
     public byte[] downloadTemplate() throws IOException {
         try (SXSSFWorkbook wb = new SXSSFWorkbook()) {
             SXSSFSheet sheet = wb.createSheet("导入模板");
-
-            // ========== 新增：在创建任何行之前，开启列跟踪 ==========
-            // 方式1：跟踪全部列
             sheet.trackAllColumnsForAutoSizing();
-            // 方式2：只跟踪需要自适应的列（推荐，节省内存）
-            // for(int i=0;i<headers.length;i++){
-            //     sheet.trackColumnForAutoSizing(i);
-            // }
 
             String[] headers = {"企业名称", "简称", "英文缩写", "统一社会信用代码", "法定代表人",
                     "联系人", "联系电话", "经营地址", "入驻开始时间", "入驻到期时间", "备注"};
@@ -352,7 +429,6 @@ public class CompanyService {
             }
             sheet.createRow(1).createCell(0).setCellValue("示例企业");
 
-            // 填充完数据后再执行自适应列宽
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
             }

@@ -3,39 +3,44 @@ package com.xinchang.management.employee.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * 人员附件实体类，对应数据库 attachment 表
+ */
 @TableName("attachment")
+@Data
+@Schema(description = "人员附件实体", name = "Attachment")
 public class Attachment {
 
     @TableId(type = IdType.AUTO)
+    @Schema(description = "附件主键ID", example = "1")
     private Long id;
-    private Long employeeId;
-    private String attachmentType;
-    private String originalName;
-    private String storedPath;
-    private Long fileSize;
-    private String fileFormat;
-    private LocalDateTime uploadedTime;
-    private LocalDateTime createdTime;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getEmployeeId() { return employeeId; }
-    public void setEmployeeId(Long employeeId) { this.employeeId = employeeId; }
-    public String getAttachmentType() { return attachmentType; }
-    public void setAttachmentType(String attachmentType) { this.attachmentType = attachmentType; }
-    public String getOriginalName() { return originalName; }
-    public void setOriginalName(String originalName) { this.originalName = originalName; }
-    public String getStoredPath() { return storedPath; }
-    public void setStoredPath(String storedPath) { this.storedPath = storedPath; }
-    public Long getFileSize() { return fileSize; }
-    public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
-    public String getFileFormat() { return fileFormat; }
-    public void setFileFormat(String fileFormat) { this.fileFormat = fileFormat; }
-    public LocalDateTime getUploadedTime() { return uploadedTime; }
-    public void setUploadedTime(LocalDateTime uploadedTime) { this.uploadedTime = uploadedTime; }
-    public LocalDateTime getCreatedTime() { return createdTime; }
-    public void setCreatedTime(LocalDateTime createdTime) { this.createdTime = createdTime; }
+    @Schema(description = "人员ID", example = "1")
+    private Long employeeId;
+
+    @Schema(description = "附件类型（ID_CARD_FRONT/ID_CARD_BACK/GRADUATION_CERT/EDUCATION_REPORT）", example = "ID_CARD_FRONT")
+    private String attachmentType;
+
+    @Schema(description = "文件原始名称", example = "身份证正反面.jpg")
+    private String originalName;
+
+    @Schema(description = "文件存储路径")
+    private String storedPath;
+
+    @Schema(description = "文件大小（字节）", example = "102400")
+    private Long fileSize;
+
+    @Schema(description = "文件格式", example = "jpg")
+    private String fileFormat;
+
+    @Schema(description = "上传时间")
+    private LocalDateTime uploadedTime;
+
+    @Schema(description = "创建时间")
+    private LocalDateTime createdTime;
 }

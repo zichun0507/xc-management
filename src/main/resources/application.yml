@@ -1,26 +1,27 @@
-
+# ==================== 公共配置 ====================
+# 服务器端口
 server:
   port: 9998
 
+# 文件上传限制
 spring:
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
-  datasource:
-    url: jdbc:mysql://localhost:3306/xc_management?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: qwer1234
   sql:
     init:
       mode: always
       schema-locations: classpath:db/schema.sql
+  profiles:
+    active: dev
 
+# 应用上传路径
 app:
   upload:
     base-path: ./uploads
 
+# sa-token 配置
 sa-token:
   token-name: xc-token
   timeout: 2592000
@@ -29,7 +30,13 @@ sa-token:
   is-share: true
   token-style: uuid
   is-log: false
-# 日志输出级别
-logging:
-  level:
-    root: debug
+
+# ==================== 环境激活 ====================
+
+# ==================== Knife4j 接口文档 ====================
+# 默认启用，通过各环境配置覆盖
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
